@@ -4,11 +4,18 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors')
-require('./config/connection')
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/users.routes');
+var recipeRouter = require('./routes/recipes.routes');
+var listRouter = require('./routes/lists.routes');
+var homePageRouter = require('./routes/homePage.routes');
+const connectToDatabase = require('./config/connection');
 
 var app = express();
 app.use(cors())
+
+connectToDatabase();
+
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -20,11 +27,19 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Routers
 app.use('/users', usersRouter);
+app.use('/home', homePageRouter);
+app.use('/recipes', recipeRouter);
+app.use('/lists', listRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
+});
+
+app.listen(3000, () => {
+  console.log(`Server is running on port 3000`);
 });
 
 // error handler
@@ -38,4 +53,5 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+
+module.exports = app ;
