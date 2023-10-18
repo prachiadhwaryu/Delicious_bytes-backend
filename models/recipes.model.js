@@ -64,13 +64,23 @@ const recipesSchema = new mongoose.Schema({
   },
   chef_name: {
     type: mongoose.Schema.Types.ObjectId, // Id from users
-    required: true,
-    ref: () => Users,
+    ref: 'Users',
   },
-  likes: Number,
+  likes: {
+    type: [mongoose.Schema.Types.ObjectId], // Id from users
+    ref: 'Users',
+  },
   rating: Number,
   view_count: Number,
-  comments: [String],
+  comments: [
+    {
+      commenter: {
+        type: mongoose.Schema.Types.ObjectId, // Id from users
+        ref: 'Users',
+      },
+      comment: String,
+    },
+  ],
 });
 
 const Recipes = mongoose.model('Recipes', recipesSchema, 'recipes');

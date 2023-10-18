@@ -17,4 +17,10 @@ router.post('/save-secret-answers', userController.save_secret_asnwers);
 
 router.post('/login', userController.user_login);
 
+router.get('/forgot-password', userController.forgot_password);
+
+router.post('/verify-secret-answer', userController.verify_secret_answer);
+
+router.post('/reset-password', userController.reset_password);
+
 module.exports = router;

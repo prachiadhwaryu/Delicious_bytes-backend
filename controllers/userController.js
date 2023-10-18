@@ -118,9 +118,106 @@ exports.user_login = asyncHandler(async (req, res) => {
     
         const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '1h' });
     
-        res.status(200).json({ token });
+        const response = {
+            token,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            profile_picture: user.profile_picture || null, 
+        };
+      
+        res.status(200).json(response);
       } catch (error) {
         console.error(error.stack);
         res.status(500).json({ error: 'Authentication failed' });
       }
 });
+
+exports.forgot_password = asyncHandler(async (req, res) => {
+    try {
+        const userEmail = req.query.email; 
+        console.log(userEmail);
+
+        const user = await Users.findOne({ email: userEmail });
+    
+        if (!user) {
+          return res.status(404).json({ error: 'Invalid email id or no user is registered with given email id.' });
+        }
+    
+        const secretQuestions = user.secret_questions;
+        if (!secretQuestions || secretQuestions.length === 0) {
+            return res.status(404).json({ error: 'User has not set secret questions' });
+        }
+
+        const randomIndex = Math.floor(Math.random() * secretQuestions.length);
+        const randomQuestionId = secretQuestions[randomIndex].question;
+
+        const question = await SecretQuestions.findById(randomQuestionId);
+
+        res.status(200).json({ question_id: question._id, question: question.value });
+
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+      }
+});
+
+exports.verify_secret_answer = asyncHandler(async (req, res) => {
+    try {
+      const userEmail = req.body.email;
+      const secretQuestionId = req.body.question_id;
+      const providedAnswer = req.body.answer;
+  
+      const user = await Users.findOne({ email: userEmail });
+  
+      if (!user) {
+        return res.status(404).json({ error: 'Invalid email id or no user is registered with given email id.' });
+      }
+  
+      const secretQuestion = user.secret_questions.find(sq => sq.question.toString() === secretQuestionId);
+  
+      if (!secretQuestion) {
+        return res.status(404).json({ error: 'Secret question not found.' });
+      }
+  
+      const isAnswerCorrect = await bcrypt.compare(providedAnswer, secretQuestion.answer);
+  
+      if (isAnswerCorrect) {
+        return res.status(200).json({ message: 'Answer is correct.' });
+      } else {
+        return res.status(401).json({ error: 'Answer is incorrect.' });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+
+exports.reset_password = asyncHandler(async (req, res) => {
+    try {
+      const userEmail = req.body.email;
+      const newPassword = req.body.new_password;
+      const confirmPassword = req.body.confirm_password;
+  
+      const user = await Users.findOne({ email: userEmail });
+  
+      if (!user) {
+        return res.status(404).json({ error: 'Invalid email id or no user is registered with given email id.' });
+      }
+  
+      if(newPassword === confirmPassword) {
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedNewPassword;
+    
+        await user.save();
+    
+        return res.status(200).json({ message: 'Password changed successfully.' });
+      } else {
+        res.status(400).json({ error: 'Passwords do not match' });
+      }
+    }catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+  

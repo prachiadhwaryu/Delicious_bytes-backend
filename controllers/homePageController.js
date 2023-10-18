@@ -6,11 +6,14 @@ exports.get_latest_recipes = asyncHandler(async (req, res) => {
         const latestRecipes = await Recipe.find()
           .sort({ upload_date: -1 }) // Sort by upload_date in descending order (latest first)
           .limit(10);
-
+        
         const formattedRecipes = latestRecipes.map(recipe => ({
           _id: recipe._id,
           name: recipe.recipe_name,
-          firstImage: recipe.images[0], 
+          firstImage: recipe.images[0]
+          .replace(/\\/g, '/')
+          .replace('uploads', '')
+          .replace(/ /g, '%20'), 
         }));
     
         res.status(200).json(formattedRecipes); 
@@ -29,7 +32,10 @@ exports.get_top_rated_recipes = asyncHandler(async (req, res) => {
         const formattedRecipes = topRatedRecipes.map(recipe => ({
           _id: recipe._id,
           name: recipe.recipe_name,
-          firstImage: recipe.images[0], 
+          firstImage: recipe.images[0]
+          .replace(/\\/g, '/')
+          .replace('uploads', '')
+          .replace(/ /g, '%20'),
         }));
     
         res.status(200).json(formattedRecipes); 
@@ -48,7 +54,10 @@ exports.get_all_time_favorite_recipes = asyncHandler(async (req, res) => {
         const formattedRecipes = favoriteRecipes.map(recipe => ({
           _id: recipe._id,
           name: recipe.recipe_name,
-          firstImage: recipe.images[0], 
+          firstImage: recipe.images[0]
+          .replace(/\\/g, '/')
+          .replace('uploads', '')
+          .replace(/ /g, '%20'),  
         }));
     
         res.status(200).json(formattedRecipes); 

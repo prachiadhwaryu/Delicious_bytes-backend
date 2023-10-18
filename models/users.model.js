@@ -32,11 +32,11 @@ const usersSchema = new mongoose.Schema({
   ],
   saved_recipes: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: Recipes,
+    ref: 'Recipes',
   },
   uploaded_recipes: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: Recipes,
+    ref: 'Recipes',
   },
   registration_date: {
     type: Date,
