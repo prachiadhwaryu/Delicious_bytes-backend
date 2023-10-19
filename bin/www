@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /**
  * Module dependencies.
  */
@@ -89,7 +88,7 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
-#!/usr/bin/env node
+
 
 /**
  * Module dependencies.
