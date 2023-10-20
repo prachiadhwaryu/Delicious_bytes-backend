@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 async function connectToDatabase() {
-    //const uri = 'mongodb+srv://A11:CookDelicious@a11.z4oquin.mongodb.net/cook_delicious_db_dump?retryWrites=true&w=majority';
-    const uri = 'mongodb://127.0.0.1:27017/cook_delicious_db';
+    const uri = 'mongodb+srv://A11:CookDelicious@a11.z4oquin.mongodb.net/cook_delicious_db_dump?retryWrites=true&w=majority';
+    //const uri = 'mongodb://127.0.0.1:27017/cook_delicious_db';
     await mongoose.connect(
         uri, 
         {
