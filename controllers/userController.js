@@ -61,9 +61,9 @@ exports.select_secret_question = asyncHandler(async (req, res) => {
 
 exports.save_secret_asnwers = asyncHandler(async (req, res) => {
     try {
-        const { userId, secretQuestions } = req.body; 
-    
-        const user = await Users.findById(userId);
+        const { email, secretQuestions } = req.body; 
+
+        const user = await Users.findOne({ email });
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
         }
