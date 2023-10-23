@@ -5,7 +5,6 @@ const asyncHandler = require('express-async-handler');
 const { TokenExpiredError } = require('jsonwebtoken');
 const verifyToken = require('../middleware/tokenVerification');
 
-const secretKey = 'loyalist';
 // Upload recipe with images
 exports.create_recipe = asyncHandler(async (req, res) => {
   const userId = verifyToken(req);
@@ -64,18 +63,21 @@ exports.create_recipe = asyncHandler(async (req, res) => {
 exports.view_recipe = asyncHandler(async (req, res) => {
   try {
     const recipeId = req.params.recipeId;
-    const token = req.header('Authorization').replace('Bearer ', '');
     let userId = null;
-    
-    try {
-      const decoded = jwt.verify(token, secretKey);
-      userId = decoded.userId;
-      
-    } catch (err) {
-      if (err instanceof TokenExpiredError) {
-        console.error('Token has expired');
-      } else {
-        console.error('Invalid token');
+
+    if (req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1];
+      const secretKey = process.env.JWT_SECRET;
+
+      try {
+        const decoded = jwt.verify(token, secretKey);
+        userId = decoded.userId;
+      } catch (err) {
+        if (err instanceof TokenExpiredError) {
+          console.error('Token has expired');
+        } else {
+          console.error('Invalid token');
+        }
       }
     }
 
