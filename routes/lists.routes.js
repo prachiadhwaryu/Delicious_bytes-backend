@@ -9,7 +9,7 @@ router.get('/meal-category-list', listsController.get_meal_category_list);
 
 router.get('/recipe-type-list', listsController.get_recipe_type_list);
 
-router.get('/special-equipmment-list', listsController.get_special_equipment_list);
+router.get('/special-equipment-list', listsController.get_special_equipment_list);
 
 router.get('/time-category-list', listsController.get_time_category_list);
 
