@@ -7,7 +7,7 @@ const verifyToken = require('../middleware/tokenVerification');
 
 // Upload recipe with images
 exports.create_recipe = asyncHandler(async (req, res) => {
-  const userId = verifyToken(req);
+  const userId = req.userId;
     try {
         const { recipe_name, description, prep_time, cook_time, cuisine, time_category, recipe_type, meal_category, ingredients, special_equipment, recipe_steps } = req.body;
         imageCounter = 1;
@@ -59,6 +59,21 @@ exports.create_recipe = asyncHandler(async (req, res) => {
       res.status(500).json({ error: 'Server error' });
     }
 });*/
+
+function formatDuration(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours > 0) {
+    if (remainingMinutes > 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+    } else {
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    }
+  } else {
+    return `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+  }
+}
 
 exports.view_recipe = asyncHandler(async (req, res) => {
   try {
@@ -124,6 +139,10 @@ exports.view_recipe = asyncHandler(async (req, res) => {
     const response = {
       _id: recipe._id,
       name: recipe.recipe_name,
+      description: recipe.description,
+      prep_time: formatDuration(recipe.prep_time),
+      cook_time: formatDuration(recipe.cook_time),
+      total_time: formatDuration(recipe.total_time),
       cuisine: recipe.cuisine ? recipe.cuisine.value : null,
       time_category: recipe.time_category.map((tc) => tc.value),
       recipe_type: recipe.recipe_type.map((rt) => rt.value),
@@ -146,11 +165,13 @@ exports.view_recipe = asyncHandler(async (req, res) => {
       upload_date: recipe.upload_date,
       view_count: recipe.view_count,
       likes_count: recipe.likes.length,
+      rating: recipe.rating !== undefined ? recipe.rating : 0,
     };
 
     if(userId){
       let is_saved = false;
       let is_liked = false;
+      let is_rated = false;
       is_liked = userId && recipe.likes.includes(userId);
       
       const user = await Users.findById(userId);
@@ -158,8 +179,13 @@ exports.view_recipe = asyncHandler(async (req, res) => {
         is_saved = true;
       }
 
+      is_rated = recipe.ratings.find((rating) => rating.user_id.toString() === userId.toString());
+      if(is_rated)
+        is_rated = true;
+
       response.is_liked = is_liked,
-      response.is_saved = is_saved
+      response.is_saved = is_saved,
+      response.is_rated = is_rated
     }
 
     res.status(200).json(response);
@@ -171,7 +197,7 @@ exports.view_recipe = asyncHandler(async (req, res) => {
 
 exports.like_unlike_recipe = asyncHandler(async (req, res) => {
   try {
-    const userId = verifyToken(req);
+    const userId = req.userId;
 
     const recipeId = req.params.recipeId;
     const recipe = await Recipe.findById(recipeId);
@@ -203,7 +229,7 @@ exports.add_comment = asyncHandler(async (req, res) => {
   try {
     const { comment } = req.body;
     const recipeId = req.params.recipeId;
-    const userId = verifyToken(req);
+    const userId = req.userId;
 
       const recipe = await Recipe.findById(recipeId);
 
@@ -229,7 +255,7 @@ exports.add_comment = asyncHandler(async (req, res) => {
 
 exports.save_recipe = asyncHandler(async (req, res) => {
   try {
-    const userId = verifyToken(req);
+    const userId = req.userId;
 
     const recipeId = req.params.recipeId;
     const user = await Users.findById(userId);
@@ -260,3 +286,55 @@ exports.save_recipe = asyncHandler(async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+exports.rate_recipe = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const recipeId = req.params.recipeId;
+    const { rating } = req.body;
+    const user = await Users.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const recipe = await Recipe.findById(recipeId);
+    const existingRating = recipe.ratings.find((r) => r.user_id === user);
+
+    if (existingRating) {
+      return res.status(400).json({ error: 'You have already rated this recipe' });
+    }
+
+    recipe.ratings.push({ user_id: userId, rating });
+    const totalRatingValue = recipe.ratings.reduce((sum, rating) => sum + rating.rating, 0);
+    const averageRating = totalRatingValue / recipe.ratings.length;
+    recipe.rating = averageRating;
+    await recipe.save();
+
+    res.status(200).json({ message: 'Rating saved successfully' });
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/*exports.whatsapp_share = asyncHandler(async (req, res) => {
+  const { text, url } = req.query;
+
+    if (!text || !url) {
+        res.status(400).send('Both "text" and "url" parameters are required.');
+        return;
+    }
+
+    const message = encodeURIComponent(`${text}\n${url}`);
+    const whatsappURL = `whatsapp://send?text=${message}`;
+
+    res.json({ whatsappURL });
+});*/

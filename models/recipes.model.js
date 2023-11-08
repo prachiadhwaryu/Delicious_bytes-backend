@@ -13,15 +13,15 @@ const recipesSchema = new mongoose.Schema({
   },
   description: String,
   prep_time: {
-    type: String,
+    type: Number,
     required: true,
   },
   cook_time: {
-    type: String,
+    type: Number,
     required: true,
   },
   total_time: {
-    type: String,
+    type: Number,
     required: true,
   },
   cuisine: {
@@ -71,6 +71,15 @@ const recipesSchema = new mongoose.Schema({
     ref: 'Users',
   },
   rating: Number,
+  ratings: [
+    {
+      user_id: {
+        type: mongoose.Schema.Types.ObjectId, // Id from users
+        ref: 'Users',
+      },
+      rating: Number,
+    },
+  ],
   view_count: Number,
   comments: [
     {
