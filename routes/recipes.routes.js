@@ -20,4 +20,6 @@ router.post('/save-recipe/:recipeId', verifyToken, recipeController.save_recipe)
 
 router.post('/rate-recipe/:recipeId', verifyToken, recipeController.rate_recipe);
 
+router.get('/search', recipeController.search_recipe);
+
 module.exports = router;

@@ -338,3 +338,65 @@ exports.rate_recipe = asyncHandler(async (req, res) => {
 
     res.json({ whatsappURL });
 });*/
+
+exports.search_recipe = asyncHandler(async (req, res) => {
+  const { keyword, cuisine, mealCategory, recipeType, timeCategory } = req.query;
+
+  try {
+    let searchQuery = {};
+
+    if (keyword) {
+        const regex = new RegExp(keyword, 'i');
+        searchQuery = {
+            $or: [
+                { recipe_name: { $regex: regex } }, // Match keyword in recipe_name
+                { description: { $regex: regex } } // Match keyword in description
+            ]
+        };
+    }
+
+    const categoryFilterQuery = [];
+
+    if (cuisine) {
+        const cuisines = cuisine.split(',');
+        const cuisineQuery = cuisines.map(category => ({ cuisine: category }));
+        categoryFilterQuery.push({ $or: cuisineQuery });
+    }
+    if (mealCategory) {
+        const mealCategories = mealCategory.split(',');
+        const mealCategoryQuery = mealCategories.map(category => ({ meal_category: category }));
+        categoryFilterQuery.push({ $or: mealCategoryQuery });
+    }
+    if (recipeType) {
+        const recipeTypes = recipeType.split(',');
+        const recipeTypeQuery = recipeTypes.map(category => ({ recipe_type: category }));
+        categoryFilterQuery.push({ $or: recipeTypeQuery });
+    }
+    if (timeCategory) {
+        const timeCategories = timeCategory.split(',');
+        const timeCategoryQuery = timeCategories.map(category => ({ time_category: category }));
+        categoryFilterQuery.push({ $or: timeCategoryQuery });
+    }
+
+    // Merge the keyword search query with the exact filtering query within categories
+    if (categoryFilterQuery.length !== 0) {
+        searchQuery = { $and: [searchQuery, ...categoryFilterQuery] };
+    }
+
+    const matchedRecipes = await Recipe.find(searchQuery);
+
+    const formattedRecipes = matchedRecipes.map(recipe => ({
+      _id: recipe._id,
+      name: recipe.recipe_name,
+      firstImage: recipe.images[0]
+      .replace(/\\/g, '/')
+      .replace('uploads', '')
+      .replace(/ /g, '%20'),  
+    }));
+
+    return res.json({ results: formattedRecipes });
+} catch (error) {
+    console.error('Error in recipe search:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+}
+});
