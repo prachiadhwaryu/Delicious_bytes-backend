@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const userController = require('../controllers/userController');
+const verifyToken = require('../middleware/tokenVerification');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -22,5 +23,17 @@ router.get('/forgot-password', userController.forgot_password);
 router.post('/verify-secret-answer', userController.verify_secret_answer);
 
 router.post('/reset-password', userController.reset_password);
+
+router.get('/saved-recipes', verifyToken, userController.saved_recipes);
+
+router.get('/view-basic-details', verifyToken, userController.view_basic_details);
+
+router.post('/update-basic-details', verifyToken, userController.update_basic_details);
+
+router.get('/view-chef-profile', verifyToken, userController.view_chef_profile);
+
+router.post('/update-chef-profile', verifyToken, userController.update_chef_profile);
+
+router.get('/profile-details', verifyToken, userController.view_profile_details);
 
 module.exports = router;

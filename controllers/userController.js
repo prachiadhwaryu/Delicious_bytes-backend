@@ -1,4 +1,5 @@
 const Users = require('../models/users.model'); 
+const Recipe = require('../models/recipes.model');
 const asyncHandler = require('express-async-handler');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
@@ -221,3 +222,162 @@ exports.reset_password = asyncHandler(async (req, res) => {
   });
   
   
+  exports.saved_recipes = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId; // This is the user ID attached by the verifyToken middleware
+  
+      // Find the user by ID and populate the saved recipes
+      const user = await Users.findById(userId).populate('saved_recipes', '_id recipe_name images');
+  
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      // Extract necessary fields from the populated saved recipes
+      const savedRecipes = user.saved_recipes.map(recipe => ({
+        _id: recipe._id,
+        name: recipe.recipe_name,
+        firstImage: recipe.images[0]
+        .replace(/\\/g, '/')
+        .replace('uploads', '')
+        .replace(/ /g, '%20'), 
+      }));
+  
+      return res.json(savedRecipes);
+    } catch (error) {
+      console.error('Error fetching saved recipes:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+
+  exports.view_basic_details = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId; 
+
+      const user = await Users.findById(userId).select('first_name last_name email phone');
+  
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      const response = {
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone: user.phone || '' 
+      };
+
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  exports.update_basic_details = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId;
+      const { first_name, last_name, email, phone } = req.body;
+  
+      const updatedUser = await Users.findByIdAndUpdate(userId, { first_name, last_name, email, phone }, { new: true });
+  
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      res.status(200).json({ message: 'Details Updated Successfully!' });
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  exports.view_chef_profile = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId; 
+
+      const user = await Users.findById(userId).select('tagline description');
+  
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      const response = {
+        tagline: user.tagline || '' ,
+        description: user.description || ''
+      };
+
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  exports.update_chef_profile = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId;
+      const { tagline, description } = req.body;
+  
+      const updatedUser = await Users.findByIdAndUpdate(userId, { tagline, description }, { new: true });
+  
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      res.status(200).json({ message: 'Details Updated Successfully!' });
+    } catch (error) {
+      console.error('Error updating chef profile:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  exports.view_profile_details = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId; 
+  
+      const user = await Users.findById(userId).select('first_name last_name profile_picture');
+  
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      // Calculate the average rating from the user's recipes
+      const recipes = await Recipe.find({ chef_name: userId }).select('rating');
+
+      if (recipes.length === 0) {
+        // No recipes uploaded by the user
+        const response = {
+          user_name: `${user.first_name} ${user.last_name}`,
+          profile_picture: user.profile_picture || '/profile/default.png',
+          rating: 0 // Set default rating to 0 if no recipes found
+        };
+        return res.json(response);
+      }
+
+      let totalRating = 0;
+      let ratedRecipes = 0;
+
+      recipes.forEach(recipe => {
+        if (recipe.rating !== undefined && recipe.rating !== null) {
+          totalRating += recipe.rating;
+          ratedRecipes++;
+        }
+      });
+
+      const averageRating = ratedRecipes > 0 ? totalRating / ratedRecipes : 0;
+
+      // Prepare the response object
+      const response = {
+        user_name: `${user.first_name} ${user.last_name}`,
+        profile_picture: user.profile_picture || '/profile/default.png',
+        rating: averageRating
+      };
+
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching user profile details:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });

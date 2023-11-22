@@ -20,6 +20,7 @@ const usersSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  phone: Number,
   profile_picture: String,
   secret_questions: [
     {
@@ -38,6 +39,8 @@ const usersSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref: 'Recipes',
   },
+  tagline: String,
+  description: String,
   registration_date: {
     type: Date,
     default: Date.now,

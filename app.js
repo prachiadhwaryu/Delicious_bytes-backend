@@ -33,6 +33,7 @@ app.use('/home', homePageRouter);
 app.use('/recipes', recipeRouter);
 app.use('/lists', listRouter);
 app.use('/images', express.static(__dirname + '/uploads/images'));
+app.use('/profile', express.static(__dirname + '/uploads/profile_pictures'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
