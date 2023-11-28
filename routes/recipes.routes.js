@@ -3,8 +3,9 @@ var router = express.Router();
 const upload = require('../middleware/upload');
 const recipeController = require('../controllers/recipeController');
 const verifyToken = require('../middleware/tokenVerification');
+const uploadToS3= require('../middleware/s3');
 
-router.post('/upload-recipe', upload.array('images', 10), verifyToken, recipeController.create_recipe);
+router.post('/upload-recipe', uploadToS3.array('images', 10), verifyToken, recipeController.create_recipe);
 
 //router.post('/upload-image', upload.array('images', 10), recipeController.upload_image);
 

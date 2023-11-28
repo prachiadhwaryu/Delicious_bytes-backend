@@ -14,6 +14,7 @@ exports.create_recipe = asyncHandler(async (req, res) => {
         //if (req.files && req.files.length > 0) {
             const imagePaths = req.files.map((file) => file.path);
         //}
+        const s3Urls = req.files.map(file => file.location);
         const total_time = parseInt(prep_time) + parseInt(cook_time);
     
         const newRecipe = new Recipe({
@@ -29,7 +30,7 @@ exports.create_recipe = asyncHandler(async (req, res) => {
           ingredients,
           special_equipment,
           recipe_steps,
-          images: imagePaths, // Assign the array of image paths
+          images: s3Urls, // Assign the array of image paths
           chef_name: userId ,
         });
     
