@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { Types } = mongoose;
 
 async function connectToDatabase() {
     const uri = 'mongodb+srv://A11:CookDelicious@a11.z4oquin.mongodb.net/cook_delicious_db_dump?retryWrites=true&w=majority';

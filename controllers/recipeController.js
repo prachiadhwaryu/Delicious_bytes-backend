@@ -4,19 +4,53 @@ const Users = require('../models/users.model');
 const asyncHandler = require('express-async-handler');
 const { TokenExpiredError } = require('jsonwebtoken');
 const verifyToken = require('../middleware/tokenVerification');
+const mongoose = require('mongoose');
+const { Types } = mongoose;
 
 // Upload recipe with images
 exports.create_recipe = asyncHandler(async (req, res) => {
   const userId = req.userId;
     try {
-        const { recipe_name, description, prep_time, cook_time, cuisine, time_category, recipe_type, meal_category, ingredients, special_equipment, recipe_steps } = req.body;
-        imageCounter = 1;
-        //if (req.files && req.files.length > 0) {
-            const imagePaths = req.files.map((file) => file.path);
-        //}
-        const s3Urls = req.files.map(file => file.location);
+        let{ recipe_name, description, prep_time, cook_time, cuisine, time_category, recipe_type, meal_category, ingredients, special_equipment, recipe_steps, calories } = req.body;
+
+        recipe_name = recipe_name.trim().replace(/^"(.*)"$/, '$1');
+        description = description.trim().replace(/^"(.*)"$/, '$1');
+        prep_time = prep_time.trim().replace(/^"(.*)"$/, '$1');
+        cook_time = cook_time.trim().replace(/^"(.*)"$/, '$1');
+        calories = calories.trim().replace(/^"(.*)"$/, '$1');
         const total_time = parseInt(prep_time) + parseInt(cook_time);
-    
+        cuisine = cuisine.replace(/^"(.*)"$/, '$1');
+
+        let meal_category_ids = [], time_category_ids = [], recipe_type_ids = [], special_equipment_ids = [];
+
+        const timeCategoryArray = Array.isArray(time_category) ? time_category : JSON.parse(time_category);
+        if (Array.isArray(timeCategoryArray)) {
+          time_category_ids = timeCategoryArray.map(id => Types.ObjectId(id));
+        }
+        const recipeTypeArray = Array.isArray(recipe_type) ? recipe_type : JSON.parse(recipe_type);
+        if (Array.isArray(recipeTypeArray)) {
+          recipe_type_ids = recipeTypeArray.map(id => Types.ObjectId(id));
+        }
+        const mealCategoryArray = Array.isArray(meal_category) ? meal_category : JSON.parse(meal_category);
+        if (Array.isArray(mealCategoryArray)) {
+          meal_category_ids = mealCategoryArray.map(id => Types.ObjectId(id));
+        }
+        const specialEquipmentArray = Array.isArray(special_equipment) ? special_equipment : JSON.parse(special_equipment);
+        if (Array.isArray(specialEquipmentArray)) {
+          special_equipment_ids = specialEquipmentArray.map(id => Types.ObjectId(id));
+        }
+        const ingredientsArray = ingredients
+        .replace(/[\[\]"]+/g, '') // Remove square brackets and quotes
+        .split(',')
+        .map((ingredient) => ingredient.trim());
+
+        const recipe_stepsArray = recipe_steps
+        .replace(/[\[\]"]+/g, '') // Remove square brackets and quotes
+        .split(',')
+        .map((step) => step.trim());
+
+        const s3Urls = req.files.map(file => file.location);
+
         const newRecipe = new Recipe({
           recipe_name,
           description,
@@ -24,12 +58,13 @@ exports.create_recipe = asyncHandler(async (req, res) => {
           cook_time, 
           total_time,
           cuisine, 
-          time_category,
-          recipe_type,
-          meal_category,
-          ingredients,
-          special_equipment,
-          recipe_steps,
+          time_category: time_category_ids,
+          recipe_type: recipe_type_ids,
+          meal_category: meal_category_ids,
+          ingredients: ingredientsArray,
+          special_equipment: special_equipment_ids,
+          recipe_steps: recipe_stepsArray,
+          calories,
           images: s3Urls, // Assign the array of image paths
           chef_name: userId ,
         });
@@ -144,6 +179,7 @@ exports.view_recipe = asyncHandler(async (req, res) => {
       prep_time: formatDuration(recipe.prep_time),
       cook_time: formatDuration(recipe.cook_time),
       total_time: formatDuration(recipe.total_time),
+      calories: recipe.calories + " Kcal",
       cuisine: recipe.cuisine ? recipe.cuisine.value : null,
       time_category: recipe.time_category.map((tc) => tc.value),
       recipe_type: recipe.recipe_type.map((rt) => rt.value),
@@ -169,25 +205,30 @@ exports.view_recipe = asyncHandler(async (req, res) => {
       rating: recipe.rating !== undefined ? recipe.rating : 0,
     };
 
-    if(userId){
+    if (userId) {
       let is_saved = false;
       let is_liked = false;
       let is_rated = false;
       is_liked = userId && recipe.likes.includes(userId);
-      
+          
       const user = await Users.findById(userId);
       if (user && user.saved_recipes.includes(recipeId)) {
         is_saved = true;
       }
-
-      is_rated = recipe.ratings.find((rating) => rating.user_id.toString() === userId.toString());
-      if(is_rated)
+    
+      const foundRating = recipe.ratings.find(
+        (rating) => rating.user_id.toString() === userId.toString()
+      );
+    
+      if (foundRating) {
         is_rated = true;
-
-      response.is_liked = is_liked,
-      response.is_saved = is_saved,
-      response.is_rated = is_rated
+      }
+    
+      response.is_liked = is_liked;
+      response.is_saved = is_saved;
+      response.is_rated = is_rated;
     }
+    
 
     res.status(200).json(response);
   } catch (error) {
