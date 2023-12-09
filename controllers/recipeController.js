@@ -425,7 +425,7 @@ exports.search_recipe = asyncHandler(async (req, res) => {
         searchQuery = { $and: [searchQuery, ...categoryFilterQuery] };
     }
 
-    const matchedRecipes = await Recipe.find(searchQuery);
+    const matchedRecipes = keyword ? await Recipe.find(searchQuery) : await Recipe.find({});
 
     const formattedRecipes = matchedRecipes.map(recipe => ({
       _id: recipe._id,
