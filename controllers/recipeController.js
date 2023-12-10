@@ -387,16 +387,6 @@ exports.search_recipe = asyncHandler(async (req, res) => {
   try {
     let searchQuery = {};
 
-    if (keyword) {
-        const regex = new RegExp(keyword, 'i');
-        searchQuery = {
-            $or: [
-                { recipe_name: { $regex: regex } }, // Match keyword in recipe_name
-                { description: { $regex: regex } } // Match keyword in description
-            ]
-        };
-    }
-
     const categoryFilterQuery = [];
 
     if (cuisine) {
@@ -420,12 +410,23 @@ exports.search_recipe = asyncHandler(async (req, res) => {
         categoryFilterQuery.push({ $or: timeCategoryQuery });
     }
 
-    // Merge the keyword search query with the exact filtering query within categories
-    if (categoryFilterQuery.length !== 0) {
-        searchQuery = { $and: [searchQuery, ...categoryFilterQuery] };
+    if (keyword && keyword.trim() !== '' && keyword.trim().toLowerCase() !== 'undefined') {
+      const regex = new RegExp(keyword, 'i');
+      const keywordQuery = {
+          $or: [
+              { recipe_name: { $regex: regex } }, // Match keyword in recipe_name
+              { description: { $regex: regex } } // Match keyword in description
+          ]
+      };
+      categoryFilterQuery.push(keywordQuery);
     }
 
-    const matchedRecipes = keyword ? await Recipe.find(searchQuery) : await Recipe.find({});
+    // Merge the keyword search query with the exact filtering query within categories
+    if (categoryFilterQuery.length !== 0) {
+        searchQuery = { $and: categoryFilterQuery };
+    }
+
+    const matchedRecipes = await Recipe.find(searchQuery);
 
     const formattedRecipes = matchedRecipes.map(recipe => ({
       _id: recipe._id,
