@@ -268,6 +268,10 @@ exports.reset_password = asyncHandler(async (req, res) => {
         // No recipes uploaded by the user
         const response = {
           user_name: `${user.first_name} ${user.last_name}`,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone || '' ,
           profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
           rating: 0 // Set default rating to 0 if no recipes found
         };
