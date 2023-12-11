@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const userController = require('../controllers/userController');
 const verifyToken = require('../middleware/tokenVerification');
+const uploadToS3_profile= require('../middleware/s3_profile');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -35,5 +36,7 @@ router.get('/view-chef-profile', verifyToken, userController.view_chef_profile);
 router.post('/update-chef-profile', verifyToken, userController.update_chef_profile);
 
 router.get('/profile-details', verifyToken, userController.view_profile_details);
+
+router.post('/upload-profile-picture', verifyToken, uploadToS3_profile.single('profile'), userController.upload_profile_picture);
 
 module.exports = router;

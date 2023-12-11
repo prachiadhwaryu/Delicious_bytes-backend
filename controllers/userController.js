@@ -350,7 +350,7 @@ exports.reset_password = asyncHandler(async (req, res) => {
         // No recipes uploaded by the user
         const response = {
           user_name: `${user.first_name} ${user.last_name}`,
-          profile_picture: user.profile_picture || '/profile/default.png',
+          profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
           rating: 0 // Set default rating to 0 if no recipes found
         };
         return res.json(response);
@@ -371,13 +371,29 @@ exports.reset_password = asyncHandler(async (req, res) => {
       // Prepare the response object
       const response = {
         user_name: `${user.first_name} ${user.last_name}`,
-        profile_picture: user.profile_picture || '/profile/default.png',
+        profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
         rating: averageRating
       };
 
       return res.json(response);
     } catch (error) {
       console.error('Error fetching user profile details:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  exports.upload_profile_picture = asyncHandler(async (req, res) => {
+    try {
+      const userId = req.userId;
+      const s3Url = req.file.location; // Get the S3 URL of the uploaded image
+
+      // Update the user's profile_picture field in the database
+      await Users.findByIdAndUpdate(userId, { profile_picture: s3Url });
+
+      res.status(200).json({ message: 'Profile picture uploaded successfully' });
+
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   });

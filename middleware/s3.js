@@ -24,8 +24,8 @@ const uploadToS3 = multer({
       const filename = `${req.body.recipe_name}-image${imageCounter}-${currentDate}.${fileExtension}`;
       cb(null, filename);*/
 
-      const recipeName = req.body.recipe_name;
-      const chef_name = req.body.chef_name;
+      const recipeName = req.body.recipe_name.trim().replace(/^"(.*)"$/, '$1');;
+      const chef_name = req.userId;
       const currentDate = moment().format('YYYY-MM-DD');
       const fileExtension = file.originalname.split('.').pop();
       const folderPath = `${recipeName}_${chef_name}`;

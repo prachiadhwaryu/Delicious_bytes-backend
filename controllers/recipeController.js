@@ -18,6 +18,7 @@ exports.create_recipe = asyncHandler(async (req, res) => {
         prep_time = prep_time.trim().replace(/^"(.*)"$/, '$1');
         cook_time = cook_time.trim().replace(/^"(.*)"$/, '$1');
         calories = calories.trim().replace(/^"(.*)"$/, '$1');
+        recipe_video = recipe_video.trim().replace(/^"(.*)"$/, '$1');
         const total_time = parseInt(prep_time) + parseInt(cook_time);
         cuisine = cuisine.replace(/^"(.*)"$/, '$1');
 
@@ -65,7 +66,8 @@ exports.create_recipe = asyncHandler(async (req, res) => {
           special_equipment: special_equipment_ids,
           recipe_steps: recipe_stepsArray,
           calories,
-          images: s3Urls, // Assign the array of image paths
+          images: s3Urls, // Assign the array of image paths,
+          recipe_video,
           chef_name: userId ,
         });
     
@@ -190,6 +192,7 @@ exports.view_recipe = asyncHandler(async (req, res) => {
       images: recipe.images.map((image) =>
         image.replace(/\\/g, '/').replace('uploads', '').replace(/ /g, '%20')
       ),
+      recipe_video: recipe.recipe_video,
       chef_name: {
         id: recipe.chef_name._id,
         name: `${recipe.chef_name.first_name} ${recipe.chef_name.last_name}`,
