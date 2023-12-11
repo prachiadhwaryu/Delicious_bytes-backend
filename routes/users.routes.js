@@ -39,4 +39,6 @@ router.get('/profile-details', verifyToken, userController.view_profile_details)
 
 router.post('/upload-profile-picture', verifyToken, uploadToS3_profile.single('profile'), userController.upload_profile_picture);
 
+router.get('/view-chef-page/:chef_id', userController.view_chef_page);
+
 module.exports = router;

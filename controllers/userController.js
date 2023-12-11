@@ -430,3 +430,66 @@ exports.reset_password = asyncHandler(async (req, res) => {
       return res.status(500).json({ error: 'Internal server error' });
     }
   });
+
+  exports.view_chef_page = asyncHandler(async (req, res) => {
+    try {
+      const  chef_id = req.params.chef_id;
+      const user = await Users.findById(chef_id).select('first_name last_name profile_picture tagline description');
+  
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      // Calculate the average rating from the user's recipes
+      const recipes = await Recipe.find({ chef_name: chef_id }).select('rating');
+
+      const userRecipes = await Recipe.find({ chef_name: chef_id })
+        .select('_id recipe_name images'); // Select necessary fields
+
+      const formattedRecipes = userRecipes.map(recipe => ({
+        id: recipe._id,
+        recipe_name: recipe.recipe_name,
+        image: (recipe.images.length > 0) ? recipe.images[0] : null // Extracting the first image
+      }));
+
+      if (recipes.length === 0) {
+        // No recipes uploaded by the user
+        const response = {
+          user_name: `${user.first_name} ${user.last_name}`,
+          profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
+          tagline: user.tagline || '' ,
+          description: user.description || '',
+          rating: 0, // Set default rating to 0 if no recipes found,
+          userRecipes: formattedRecipes
+        };
+        return res.json(response);
+      }
+
+      let totalRating = 0;
+      let ratedRecipes = 0;
+
+      recipes.forEach(recipe => {
+        if (recipe.rating !== undefined && recipe.rating !== null) {
+          totalRating += recipe.rating;
+          ratedRecipes++;
+        }
+      });
+
+      const averageRating = ratedRecipes > 0 ? totalRating / ratedRecipes : 0;
+
+      // Prepare the response object
+      const response = {
+        user_name: `${user.first_name} ${user.last_name}`,
+        profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
+        tagline: user.tagline || '' ,
+        description: user.description || '',
+        rating: averageRating,
+        userRecipes: formattedRecipes
+      };
+
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
