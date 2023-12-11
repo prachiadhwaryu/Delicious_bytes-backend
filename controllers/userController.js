@@ -255,17 +255,46 @@ exports.reset_password = asyncHandler(async (req, res) => {
     try {
       const userId = req.userId; 
 
-      const user = await Users.findById(userId).select('first_name last_name email phone');
+      const user = await Users.findById(userId).select('first_name last_name email phone profile_picture');
   
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
   
+      // Calculate the average rating from the user's recipes
+      const recipes = await Recipe.find({ chef_name: userId }).select('rating');
+
+      if (recipes.length === 0) {
+        // No recipes uploaded by the user
+        const response = {
+          user_name: `${user.first_name} ${user.last_name}`,
+          profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
+          rating: 0 // Set default rating to 0 if no recipes found
+        };
+        return res.json(response);
+      }
+
+      let totalRating = 0;
+      let ratedRecipes = 0;
+
+      recipes.forEach(recipe => {
+        if (recipe.rating !== undefined && recipe.rating !== null) {
+          totalRating += recipe.rating;
+          ratedRecipes++;
+        }
+      });
+
+      const averageRating = ratedRecipes > 0 ? totalRating / ratedRecipes : 0;
+
+      // Prepare the response object
       const response = {
+        user_name: `${user.first_name} ${user.last_name}`,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        phone: user.phone || '' 
+        phone: user.phone || '' ,
+        profile_picture: user.profile_picture || 'https://cook-delicious-profiles.s3.ca-central-1.amazonaws.com/default.png',
+        rating: averageRating
       };
 
       return res.json(response);
