@@ -11,14 +11,15 @@ const { Types } = mongoose;
 exports.create_recipe = asyncHandler(async (req, res) => {
   const userId = req.userId;
     try {
-        let{ recipe_name, description, prep_time, cook_time, cuisine, time_category, recipe_type, meal_category, ingredients, special_equipment, recipe_steps, calories } = req.body;
+        let{ recipe_name, description, prep_time, cook_time, cuisine, time_category, recipe_type, meal_category, ingredients, special_equipment, recipe_steps, calories, recipe_video } = req.body;
 
         recipe_name = recipe_name.trim().replace(/^"(.*)"$/, '$1');
         description = description.trim().replace(/^"(.*)"$/, '$1');
         prep_time = prep_time.trim().replace(/^"(.*)"$/, '$1');
         cook_time = cook_time.trim().replace(/^"(.*)"$/, '$1');
         calories = calories.trim().replace(/^"(.*)"$/, '$1');
-        recipe_video = recipe_video.trim().replace(/^"(.*)"$/, '$1');
+        if (recipe_video !== undefined) 
+          recipe_video = recipe_video.trim().replace(/^"(.*)"$/, '$1');
         const total_time = parseInt(prep_time) + parseInt(cook_time);
         cuisine = cuisine.replace(/^"(.*)"$/, '$1');
 
