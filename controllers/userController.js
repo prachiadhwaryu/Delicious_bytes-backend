@@ -117,7 +117,7 @@ exports.user_login = asyncHandler(async (req, res) => {
           return res.status(401).json({ error: 'Authentication failed - Incorrect Password.' });
         }
     
-        const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '3h' });
     
         const response = {
             token,
